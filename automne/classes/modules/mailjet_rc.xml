@@ -1,0 +1,4 @@
+<cms-module-parameters>
+	<param name="MAILJET_API_KEY" type="text"></param>
+	<param name="MAILJET_SECRET_KEY" type="text"></param>
+</cms-module-parameters>
