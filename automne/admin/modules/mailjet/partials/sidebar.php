@@ -1,5 +1,5 @@
 <?php
-$pages = array('Campagnes' => 'campaign', 'Listes' => 'list');
+$pages = array('Campagnes' => 'campaign', 'Listes' => 'list', 'Segments' => 'segment');
 
 ?>
 
