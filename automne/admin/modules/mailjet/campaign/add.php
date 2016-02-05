@@ -19,6 +19,15 @@ if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_S
 	}
 }
 
+
+$allSegments = $api->contactfilter(array('Limit' => '-1'));
+if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_STATUS_CODE_OK_GET){
+	$segments = array();
+	foreach($allSegments->Data as $key => $segment){
+		$segments[$segment->ID] = $segment->Name;
+	}
+}
+
 $languages = array(
 	'en_EN' => 'en',
 	'fr_FR' => 'fr',
@@ -44,6 +53,7 @@ if($submitted) {
 	$list_id      = io::post('list_id');
 	$permalink    = io::post('permalink');
 	$reply_to     = io::post('reply_to');
+	$segment_id   = io::post('segment_id');
 	if(empty($title) || empty($subject) || empty($list_id) || empty($lang) || empty($from) || empty($from_name) || empty($footer)) {
 		$errors[] = 'Veuillez remplir tous les champs obligatoires';
 	}
@@ -69,6 +79,10 @@ if($submitted) {
 	    'ReplyEmail' => $reply_to,
 	    'EditMode' => 'html'
 		);
+
+		if($segment_id !== ''){
+			$params['SegmentationID'] = $segment_id;
+		}
 		
 		$response = $api->newsletter($params);
 
@@ -95,6 +109,7 @@ else {
 	$list_id      = '';
 	$permalink    = '';
 	$reply_to     = '';
+	$segment_id   = '';
 }
 
 ?>
@@ -144,35 +159,45 @@ else {
 							<?php endforeach ?>
 							<form action="" method="post" class="form-horizontal">
 								<div class="form-group">
-                  <label class="control-label" for="title">Titre <span class="mandatory">*</span></label>
-                  <div class="controls">
-                    <input type="text" name="title" class="form-control input-sm" required value="<?php echo $title?>">
-                    <span class="help-block">Le titre de la campagne. Usage interne uniquement.</span>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="control-label" for="subject">Sujet <span class="mandatory">*</span></label>
-                  <div class="controls">
-                    <input type="text" name="subject" class="form-control input-sm" required  value="<?php echo $subject?>">
-                    <span class="help-block">Le sujet de la campagne. Sera le titre de l'email reçu.</span>
-                  </div>
-                </div>
-								<div class="form-group">
-									<label class="control-label" for="list_id">Liste <span class="mandatory">*</span></label>
-									<div class="controls">
-										<select name="list_id" class="form-control">
-											<?php echo CMS_module_mailjet::buildOptions($lists,$list_id);?>
-										</select>
-										<span class="help-block">Le liste destinataire de la campagne.</span>
-									</div>
-								</div>
-								<div class="form-group">
+				                  <label class="control-label" for="title">Titre <span class="mandatory">*</span></label>
+				                  <div class="controls">
+				                    <input type="text" name="title" class="form-control input-sm" required value="<?php echo $title?>">
+				                    <span class="help-block">Le titre de la campagne. Usage interne uniquement.</span>
+				                  </div>
+				                </div>
+				                <div class="form-group">
+				                  <label class="control-label" for="subject">Sujet <span class="mandatory">*</span></label>
+				                  <div class="controls">
+				                    <input type="text" name="subject" class="form-control input-sm" required  value="<?php echo $subject?>">
+				                    <span class="help-block">Le sujet de la campagne. Sera le titre de l'email reçu.</span>
+				                  </div>
+				                </div>
+                				<div class="form-group">
 									<label class="control-label" for="lang">Langue <span class="mandatory">*</span></label>
 									<div class="controls">
 										<select name="lang" class="form-control">
 											<?php echo CMS_module_mailjet::buildOptions($languages,$lang);?>
 										</select>
 										<span class="help-block">La langue de la campagne.</span>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label" for="list_id">Liste <span class="mandatory">*</span></label>
+									<div class="controls">
+										<select name="list_id" class="form-control">
+											<?php echo CMS_module_mailjet::buildOptions($lists,$list_id);?>
+										</select>
+										<span class="help-block">La liste destinataire de la campagne.</span>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label" for="segment_id">Segment</label>
+									<div class="controls">
+										<select name="segment_id" class="form-control" <?php if(empty($segments)) echo 'disabled'; ?>>
+											<option value=""></option>
+											<?php echo CMS_module_mailjet::buildOptions($segments,$segment_id);?>
+										</select>
+										<span class="help-block">Le segment de liste de la campagne. <?php if(empty($segments)) echo 'Aucun segment créé'; ?></span>
 									</div>
 								</div>
 								<div class="form-group">
@@ -207,15 +232,9 @@ else {
 						</div>
 					</div>
 					<?php endif ?>
-
-
 				</div>
 			</div>
-
-			<!-- content goes here -->
 		</div>
-
 		<?php include dirname(__FILE__).'/../partials/scripts.php'; ?>
-
 	</body>
 </html>
