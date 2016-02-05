@@ -4,6 +4,7 @@ require_once(dirname(__FILE__).'/../module.inc.php');
 $campaignId = io::get('id');
 $campaign = null;
 $campaign = $api->campaign(array("CampaignID" => $campaignId));
+
 // Newsletter
 if(empty($campaign->Data)){
 	$newsletter = $api->newsletter(array("method" => "VIEW", "ID" => $campaignId))->Data[0];
@@ -27,9 +28,10 @@ $campaign->ListID = $newsletter->ContactsListID;
 $campaign->CreatedAt = $newsletter->CreatedAt;
 $campaign->SendStartAt = $newsletter->DeliveredAt;
 $campaign->ReplyTo = (isset($newsletter->ReplyEmail)) ? $newsletter->ReplyEmail : '';
+$campaign->SegmentationID = (isset($newsletter->SegmentationID)) ? $newsletter->SegmentationID : '';
 
 $senderResponse = $api->sender(array("Limit" => "-1", "Status" => "Active"));
-if(isset($api->_response_code) && $api->_response_code === 200){
+if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_STATUS_CODE_OK_GET){
 	$senders = array();
 	foreach ($senderResponse->Data as $key => $sender) {
 		$senders[$sender->Email] = $sender->Email;
@@ -38,10 +40,18 @@ if(isset($api->_response_code) && $api->_response_code === 200){
 
 
 $allLists = $api->contactslist(array("Limit" => "-1"));
-if(isset($api->_response_code) && $api->_response_code === 200){
+if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_STATUS_CODE_OK_GET){
 	$lists = array();
 	foreach ($allLists->Data as $key => $list) {
 		$lists[$list->ID] = $list->Name;
+	}
+}
+
+$allSegments = $api->contactfilter(array('Limit' => '-1'));
+if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_STATUS_CODE_OK_GET){
+	$segments = array();
+	foreach($allSegments->Data as $key => $segment){
+		$segments[$segment->ID] = $segment->Name;
 	}
 }
 
@@ -72,6 +82,7 @@ if($submitted) {
 	$list_id      = io::post('list_id');
 	$permalink    = io::post('permalink');
 	$reply_to     = io::post('reply_to');
+	$segment_id   = io::post('segment_id');
 	if(empty($title) || empty($subject) || empty($list_id) || empty($lang) || empty($from) || empty($from_name) || empty($footer)) {
 		$errors[] = 'Veuillez remplir tous les champs obligatoires';
 	}
@@ -96,13 +107,16 @@ if($submitted) {
 	    'Permalink' => $permalink,
 	    'ReplyEmail' => $reply_to,
 		);
+		if($segment_id !== ''){
+			$params['SegmentationID'] = $segment_id;
+		}
 
 		$response = $api->newsletter($params);
-		if(isset($api->_response_code) && $api->_response_code === 200) {
+		if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_STATUS_CODE_OK_GET) {
 			$updated = true;
 			$id = $response->Data[0]->ID;
 		}
-		elseif (isset($api->_response_code) && $api->_response_code !== 200) {
+		elseif (isset($api->_response_code) && $api->_response_code !== MailjetAPI::MAILJET_STATUS_CODE_OK_GET) {
 		 	$msg = 'Erreur pendant la modification de la campagne.';
 		 	$errors[] = $msg;
 		}
@@ -123,6 +137,7 @@ else {
 		$permalink    = $campaign->Permalink;
 		$reply_to     = $campaign->ReplyTo;
 		$status       = $campaign->Status;
+		$segment_id   = $campaign->SegmentationID;
   }
 }
 
@@ -191,6 +206,15 @@ $updateDisabled = ($status !== 'draft');
 		                    <span class="help-block">Le sujet de la campagne. Sera le titre de l'email reçu.</span>
 		                  </div>
 		                </div>
+		                <div class="form-group">
+							<label class="control-label" for="lang">Langue <span class="mandatory">*</span></label>
+							<div class="controls">
+								<select name="lang" class="form-control">
+									<?php echo CMS_module_mailjet::buildOptions($languages,$lang);?>
+								</select>
+								<span class="help-block">La langue de la campagne.</span>
+							</div>
+						</div>
 						<div class="form-group">
 							<label class="control-label" for="list_id">Liste <span class="mandatory">*</span></label>
 							<div class="controls">
@@ -201,12 +225,13 @@ $updateDisabled = ($status !== 'draft');
 							</div>
 						</div>
 						<div class="form-group">
-							<label class="control-label" for="lang">Langue <span class="mandatory">*</span></label>
+							<label class="control-label" for="segment_id">Segment</label>
 							<div class="controls">
-								<select name="lang" class="form-control">
-									<?php echo CMS_module_mailjet::buildOptions($languages,$lang);?>
+								<select name="segment_id" class="form-control">
+									<option value=""></option>
+									<?php echo CMS_module_mailjet::buildOptions($segments,$segment_id);?>
 								</select>
-								<span class="help-block">La langue de la campagne.</span>
+								<span class="help-block">Le segment de liste de la campagne.</span>
 							</div>
 						</div>
 						<div class="form-group">
