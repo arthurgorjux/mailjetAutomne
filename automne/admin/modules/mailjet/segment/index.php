@@ -41,7 +41,6 @@ if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_S
 							<table class="table table-bordered table-striped table-hover">
 								<thead>
 									<tr>
-										<th>Statut</th>
 										<th>Nom</th>
 										<th>Description</th>
 										<th>Expression</th>
@@ -51,7 +50,6 @@ if(isset($api->_response_code) && $api->_response_code === MailjetAPI::MAILJET_S
 								<tbody>
 									<?php foreach($segments as $segment): ?>
 										<tr>
-											<td><span class="label label-<?php echo MailjetAPI::getStatusClass($segment->Status)?>"><?php echo MailjetAPI::getStatus($segment->Status);?></span></td>
 											<td><?php echo $segment->Name;?></td>
 											<td><?php echo ($segment->Description !== '') ? $segment->Description : '-';?></td>
 											<td><?php echo $segment->Expression;?></td>
