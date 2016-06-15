@@ -80,7 +80,7 @@ if($submitted) {
 	    'EditMode' => 'html'
 		);
 
-		if($segment_id !== ''){
+		if($segment && $segment_id !== ''){
 			$params['SegmentationID'] = $segment_id;
 		}
 		
